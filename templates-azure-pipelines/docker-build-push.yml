@@ -1,0 +1,21 @@
+parameters:
+  serviceConnection: ''
+  repository: ''
+  dockerfile: ''
+  tags: ''
+
+steps:
+- task: Docker@2
+  displayName: 'Build docker image and push for Azure ACR'
+  inputs:
+    command: 'buildAndPush'
+    containerRegistry: ${{ parameters.serviceConnection }}
+    repository: ${{ parameters.repository }}
+    dockerfile: ${{ parameters.dockerfile }}
+    tags: ${{ parameters.tags }}
+
+- task: PublishBuildArtifacts@1
+  inputs:
+    PathtoPublish: '$(System.DefaultWorkingDirectory)'
+    ArtifactName: 'drop'
+    publishLocation: 'Container'

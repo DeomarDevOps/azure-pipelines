@@ -1,0 +1,44 @@
+parameters:
+  buildConfiguration: 'Release'
+  appPath: '' # Adicione o parâmetro aqui para que possa ser fornecido pelo pipeline principal
+  caminho: $(caminho)
+
+
+steps:
+- checkout: self
+
+- task: FileTransform@1
+  inputs:
+    folderPath: '$(System.DefaultWorkingDirectory)/${{ parameters.caminho }}/'
+    fileType: 'json'
+    targetFiles: 'appsettings.json'
+
+- script: |
+    # Gera uma lista formatada dos arquivos .csproj
+    PROJECTS=$(find "${{ parameters.appPath }}" -name "*.csproj" -printf "      ${{ parameters.appPath }}/%P\n" | sed 's/\/\//\//g')
+    echo "##vso[task.setvariable variable=projectList]$PROJECTS"
+  displayName: 'Generate Project List'
+
+- script: |
+    # Imprime a variável projectList para verificação
+    echo "$(projectList)"
+  displayName: 'Print projectList'
+
+#- task: DotNetCoreCLI@2
+#  displayName: 'Restore NuGet Packages'
+#  inputs:
+#    command: 'restore'
+#    projects: '$(projectList)'
+#    feedsToUse: 'select'
+#    vstsFeed: '3545df78-4783-41a4-bd7b-bfc93c7a7d46/304bb424-3fa6-4f13-9e7a-6fdedf27fa65'
+
+- task: DotNetCoreCLI@2
+  displayName: 'Build Solution .Net'
+  inputs:
+    command: build
+    projects: |
+      $(projectList)
+    arguments: '--configuration ${{ parameters.buildConfiguration }}'
+
+
+

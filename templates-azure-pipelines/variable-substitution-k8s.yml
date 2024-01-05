@@ -1,0 +1,26 @@
+steps:
+- script: |
+    
+    IMAGE_TAG=$(cat $(Build.SourcesDirectory)/$(appPath)/version.txt)
+    sed  -i "s/APPNAME/$APPNAME/g" k8s/template-deploy-k8s.yml
+    sed  -i "s/ACR/$ACR/g" k8s/template-deploy-k8s.yml
+    sed  -i "s/IMAGE_TAG/$IMAGE_TAG/g" k8s/template-deploy-k8s.yml
+    sed  -i "s/APP_PORT/$APP_PORT/g" k8s/template-deploy-k8s.yml
+    sed  -i "s/MEMORY_REQUEST/$MEMORY_REQUEST/g" k8s/template-deploy-k8s.yml
+    sed  -i "s/CPU_REQUEST/$CPU_REQUEST/g" k8s/template-deploy-k8s.yml
+    sed  -i "s/MEMORY_LIMIT/$MEMORY_LIMIT/g" k8s/template-deploy-k8s.yml
+    sed  -i "s/CPU_LIMIT/$CPU_LIMIT/g" k8s/template-deploy-k8s.yml
+    sed  -i "s/FQDN/$FQDN/g" k8s/template-deploy-k8s.yml
+    cat k8s/template-deploy-k8s.yml
+
+  displayName: 'Substitute Azure DevOps variables into Kubernetes manifest'
+  env:
+    APPNAME: $(APPNAME)
+    ACR: $(ACR)
+    IMAGE_TAG: $(appVersion)
+    APP_PORT: $(APP_PORT)
+    MEMORY_REQUEST: $(MEMORY_REQUEST)
+    CPU_REQUEST: $(CPU_REQUEST)
+    MEMORY_LIMIT: $(MEMORY_LIMIT)
+    CPU_LIMIT: $(CPU_LIMIT)
+    FQDN: $(FQDN)

@@ -1,0 +1,9 @@
+parameters:
+  serviceConnection: ''
+
+steps:
+- task: Docker@2
+  displayName: 'Login no Azure ACR'
+  inputs:
+    command: 'login'
+    containerRegistry: ${{ parameters.serviceConnection }}

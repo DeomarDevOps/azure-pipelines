@@ -1,0 +1,7 @@
+# starttime.yml
+
+steps:
+  - script: |
+      echo "##vso[task.setvariable variable=startTime]$(date)"
+      echo "##vso[task.setvariable variable=startTimestamp]$(date +%s)"
+    displayName: 'Set start time and timestamp'

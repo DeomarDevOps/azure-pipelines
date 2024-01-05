@@ -1,0 +1,96 @@
+parameters:
+- name: nuGetServiceConnections
+  type: string
+- name: caminhoPacote
+  type: string
+- name: VeracodeID
+  type: string
+- name: VeracodeKey
+  type: string
+- name: veracodeAppProfile
+  type: string
+- name: VeracodeSCA
+  type: string
+
+steps:
+  - task: NuGetAuthenticate@1
+    displayName: 'NuGet Authenticate'
+    inputs:
+      nuGetServiceConnections: ${{ parameters.nuGetServiceConnections }}
+      forceReinstallCredentialProvider: false
+
+  - task: CopyFiles@2
+    displayName: 'Copy Files to: $(build.artifactstagingdirectory)'
+    inputs:
+      SourceFolder: '$(System.DefaultWorkingDirectory)'
+      Contents: '**/*.dll\n**/*.pdb'
+      TargetFolder: '$(build.artifactstagingdirectory)'
+
+  - task: ArchiveFiles@2
+    inputs:
+      rootFolderOrFile: '$(Build.SourcesDirectory)'
+      archiveType: 'zip'
+      archiveFile: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip' 
+  - task: PublishPipelineArtifact@1
+    inputs:
+      artifactName: $(Build.BuildId)
+      targetPath: '$(Build.ArtifactStagingDirectory)'
+      publishLocation: 'pipeline'
+    displayName: 'Publish $(Build.BuildId) artifact'
+
+  - task: DownloadPipelineArtifact@2
+    inputs:
+      artifactName: '$(Build.BuildId)'
+      targetPath: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId)'
+    displayName: 'Downloads'
+
+  - task: ExtractFiles@1
+    inputs:
+      archiveFilePatterns: '*.zip' # string. Required. Archive file patterns. Default: **/*.zip.
+      destinationFolder: $(Build.BuildId)
+
+  - task: Veracode@3
+    displayName: 'Veracode U&S'
+    inputs:
+      ConnectionDetailsSelection: 'Credentials'
+      apiId: ${{ parameters.VeracodeID }}
+      apiKey: ${{ parameters.VeracodeKey }}
+      veracodeAppProfile: ${{ parameters.veracodeAppProfile }}
+      version: '$(build.buildNumber)'
+      createProfile: true
+      filepath: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip'
+      maximumWaitTime: '360'
+
+  - bash: |
+      export SRCCLR_SCM_NAME=${{ parameters.veracodeAppProfile }}
+      export SRCCLR_API_TOKEN=${{ parameters.VeracodeSCA }}
+      curl -sSL https://download.sourceclear.com/ci.sh | bash -s – scan --update-advisor --allow-dirty
+    displayName: 'Veracode SCA - Componentes de Terceiros'
+    
+  - script: |
+      curl -O -L https://downloads.veracode.com/securityscan/pipeline-scan-LATEST.zip
+    displayName: 'Download - Veracode Pipeline Scan'
+
+  - task: ExtractFiles@1
+    displayName: 'Extract - Veracode Pipeline Scan'
+    inputs:
+      archiveFilePatterns: 'pipeline-scan-LATEST.zip'
+      destinationFolder: '$(Build.ArtifactStagingDirectory)'
+
+  - task: DownloadPipelineArtifact@2
+    inputs:
+      artifactName: '$(Build.BuildId)'
+      targetPath: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId)'
+    displayName: 'Download Artifact'
+
+  - task: ExtractFiles@1
+    inputs:
+      archiveFilePatterns: '*.zip' # string. Required. Archive file patterns. Default: **/*.zip.
+      destinationFolder: $(Build.BuildId)
+
+  - bash: |
+      java -jar $(Build.ArtifactStagingDirectory)/pipeline-scan.jar -vid ${{ parameters.VeracodeID }} -vkey ${{ parameters.VeracodeKey }} -f $(Build.ArtifactStagingDirectory)/$(Build.BuildId)/$(Build.BuildId).zip --issue_details true
+    displayName: 'Veracode PipelineScan'
+
+
+

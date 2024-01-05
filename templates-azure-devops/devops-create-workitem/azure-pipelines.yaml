@@ -1,0 +1,51 @@
+parameters:
+- name: teamProject
+  displayName: Em qual Boards o Work Item será criado
+  type: string
+- name: workItemType
+  displayName: Escolha o tipo de Work Item
+  type: string
+  default: Task
+  values:
+  - Bug
+  - Epic
+  - Feature
+  - Task
+  - Test Case
+  - User Story
+  - Issue
+- name: title
+  displayName: Título do Work Item
+  type: string
+- name: description
+  displayName: Descreva a atividade
+  type: string
+- name: assignedTo
+  displayName: Colaborador
+  type: string
+- name: teamSprint
+  displayName: Definir a Sprint
+  type: string
+- name: targetId
+  displayName: User Story
+  type: string
+
+
+pool:
+  name: Unidas Pipelines (Linux)
+steps:
+- task: mspremier.CreateWorkItem.CreateWorkItem-task.CreateWorkItem@2
+  displayName: 'Create work item'
+  inputs:
+    teamProject: ${{ parameters.teamProject }}
+    workItemType: ${{ parameters.workItemType }}
+    title: ${{ parameters.title }}
+    fieldMappings: 'Description=${{ parameters.description }}'
+    assignedTo: ${{ parameters.assignedTo }}
+    areaPath: ${{ parameters.teamProject }}
+    iterationPath: ${{ parameters.teamSprint }}
+    associate: true
+    linkWorkItems: true
+    linkType: 'System.LinkTypes.Hierarchy-Reverse'
+    targetId: ${{ parameters.targetId }}
+

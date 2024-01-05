@@ -1,0 +1,33 @@
+# notify.yaml
+
+parameters:
+  - name: BuildDefinitionName
+    type: string
+  - name: startTime
+    type: string
+  - name: endTime
+    type: string
+  - name: executionTime
+    type: string
+  - name: SourceVersion
+    type: string
+  - name: RequestedFor
+    type: string
+  - name: StageName
+    type: string
+    default: 'YourStageName'
+  - name: WEBHOOK_URL
+    type: string
+
+steps:
+  - script: |
+      if [ $? -eq 0 ]; then
+        MESSAGE="Pipeline **${{ parameters.BuildDefinitionName }}**\n succeeded!\n- Start: ${{ parameters.startTime }}\n- End: ${{ parameters.endTime }}\n- Duration: ${{ parameters.executionTime }}\n- Commit: ${{ parameters.SourceVersion }}\n- Author: ${{ parameters.RequestedFor }}\n"
+      else
+        MESSAGE="Pipeline **${{ parameters.BuildDefinitionName }}**\n failed at stage **${{ parameters.StageName }}**!\n- Start: ${{ parameters.startTime }}\n- End: ${{ parameters.endTime }}\n- Duration: ${{ parameters.executionTime }}\n- Commit: ${{ parameters.SourceVersion }}\n- Author: ${{ parameters.RequestedFor }}\n"
+      fi
+      curl -H "Content-Type: application/json" -d "{\"text\": \"$MESSAGE\"}" $WEBHOOK_URL
+    displayName: 'Send notification via Webhook'
+    env:
+      WEBHOOK_URL: ${{ parameters.WEBHOOK_URL }}
+    condition: always()

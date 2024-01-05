@@ -1,0 +1,43 @@
+parameters:
+  - name: projectKey
+    type: string
+  - name: projectName
+    type: string
+  - name: sonarServiceConnection
+    type: string
+  - name: projeto
+    type: string
+
+steps:
+  - task: SonarQubePrepare@4
+    inputs:
+      SonarQube: ${{ parameters.sonarServiceConnection }}
+      scannerMode: 'MSBuild'
+      projectKey: ${{ parameters.projectKey }}
+      projectName: ${{ parameters.projectName }};${{ parameters.projeto }} 
+
+  - script: |
+      # Navegando até o diretório correto
+      cd $(Build.SourcesDirectory)/$(appPath)
+
+      dotnet build
+    displayName: 'Build'
+
+  - task: SonarQubeAnalyze@5
+
+  - task: SonarQubePublish@5
+    inputs:
+      pollingTimeoutSec: '300'
+
+
+  #- script: |
+  #    qualityGateStatus=$(curl -s -u "${{ parameters.sonarLoginToken }}:" "${{ parameters.sonarHostURL }}/api/qualitygates/project_status?projectKey=${{ parameters.projectKey }}" | jq -r .projectStatus.status)
+  #    if [ "$qualityGateStatus" != "OK" ]; then
+  #        echo "Quality gate failed. Not reaching the desired quality percentage."
+  #        exit 1
+  #    fi
+  #  displayName: 'Check Quality Gate'
+
+
+
+

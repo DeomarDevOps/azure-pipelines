@@ -1,0 +1,66 @@
+parameters:
+- name: nameNodePool
+  displayName: Digite o nome do NodePool.
+  type: string
+- name: nameRG
+  displayName: Digite o nome do Resource group.
+  type: string
+- name: nameCluster
+  displayName: Digite o nome do Cluster.
+  type: string
+- name: nameSize
+  displayName: Qual o size será utilizado?
+  type: string
+- name: nameQuantNode
+  displayName: Quantidade de Nós?
+  type: string
+- name: nameMaxPods
+  displayName: Qual a quantidade máxima de Pods?
+  type: string
+- name: nameZone
+  displayName: Escolha a zona de disponibilidade?
+  type: string
+  default: 1
+  values:
+  - 1
+  - 2
+  - 3
+- name: nameOS
+  displayName: Qual S.O será utilizado?
+  type: string
+- name: nameMode
+  displayName: Escolha o modo, System ou User?
+  type: string
+  default: User
+  values:
+  - System
+  - User
+- name: nameTaints
+  displayName: Possui Taints? name=values:status
+  type: string
+- name: nameLabels
+  displayName: Possui Labels? name=values
+  type: string
+
+
+pool:
+  name: Azure Pipelines
+steps:
+- task: AzureCLI@2
+  displayName: 'Azure CLI '
+  inputs:
+    azureSubscription: 'FLEET'
+    scriptType: 'bash'
+    scriptLocation: 'inlineScript'
+    inlineScript: |
+      az aks nodepool add --name ${{ parameters.nameNodePool }} \
+          --resource-group ${{ parameters.nameRG }} \
+          --cluster-name ${{ parameters.nameCluster }} \
+          --node-vm-size ${{ parameters.nameSize }} \
+          --node-count ${{ parameters.nameQuantNode }} \
+          --max-pods ${{ parameters.nameMaxPods }} \
+          --zones ${{ parameters.nameZone }} \
+          --os-sku ${{ parameters.nameOS }} \
+          --mode ${{ parameters.nameMode }} \
+          --node-taints ${{ parameters.nameTaints }} \
+          --labels ${{ parameters.nameLabels }} 

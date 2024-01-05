@@ -1,0 +1,21 @@
+parameters:
+  - name: buildConfiguration
+    default: 'Release'
+    type: string
+  - name: testProjectsPath
+    default: 'projetoteste/projetoteste.Tests/*.csproj'
+    type: string
+
+steps:
+- task: DotNetCoreCLI@2
+  displayName: 'Restore NuGet Packages for Tests'
+  inputs:
+    command: restore
+    projects: ${{ parameters.testProjectsPath }}
+
+- task: DotNetCoreCLI@2
+  displayName: 'Unit test .net Core Web Application'
+  inputs:
+    command: test
+    projects: ${{ parameters.testProjectsPath }}
+    arguments: '--configuration ${{ parameters.buildConfiguration }} --verbosity detailed'

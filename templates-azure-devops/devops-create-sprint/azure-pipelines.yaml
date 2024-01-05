@@ -1,0 +1,21 @@
+parameters:
+- name: nameSprint
+  displayName: Qual o nome da Sprint?
+  type: string
+- name: startDate
+  displayName: Quando a sprint se inicia? Formato "aaaa-mm-dd"
+  type: string
+- name: finishDate
+  displayName: Quando a sprint se finaliza? Formato "aaaa-mm-dd"
+  type: string
+
+pool:
+  name: Azure Pipelines
+steps:
+- bash: |
+   export AZURE_DEVOPS_EXT_PAT=$(PAT)
+   
+   az devops configure --defaults organization=https://dev.azure.com/UnidasLocadoras/ project=Arquitetura
+   
+   az boards iteration project create --name ${{ parameters.nameSprint }} --start-date ${{ parameters.startDate }} --finish-date ${{ parameters.finishDate }} --project Arquitetura 
+  displayName: 'Criando Sprint'

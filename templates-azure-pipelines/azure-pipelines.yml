@@ -1,0 +1,176 @@
+trigger:
+- main
+
+pr:
+- maintrigger:
+- main
+
+pr:
+- main
+
+variables:
+- group: VAR_Veracode
+- group: VAR_Build_Default
+- group: VAR_Build_projeto
+- group: VAR_Application_Insights_DEV
+
+resources:
+  repositories:
+  - repository: template
+    type: git
+    name: "Barramento-Microservicos/Unidas-TemplatesAggrandize-Net"
+    ref: refs/heads/main
+
+stages:
+- stage: CI
+  displayName: 'Build Process'
+  jobs:
+  - job: BuildTestPush
+    pool:
+      vmImage: 'ubuntu-20.04'
+    steps:
+    - template: starttime.yml@template 
+
+    - template: build-netcore.yml@template
+      parameters:
+        buildConfiguration: 'Release'
+        appPath: $(appPath)
+        caminho: $(caminho)
+
+    - template: unity-test.yml@template
+      parameters:
+        testProjectsPath: $(testProjectsPath)
+        buildConfiguration: 'Debug'
+
+    - template: sonarqube-analysis.yml@template
+      parameters:
+        sonarServiceConnection: $(sonarServiceConnection)
+        projectKey: $(projectKey)
+        projectName: $(projectName)
+        projeto: $(projeto)
+  
+#    - template: veracode.yml@template
+#      parameters:
+#        nuGetServiceConnections: $(nuGetServiceConnections)
+#        caminhoPacote: $(caminhoPacote)
+#        VeracodeID: $(VeracodeID)
+#        VeracodeKey: $(VeracodeKey)
+#        veracodeAppProfile: $(veracodeAppProfile)
+#        VeracodeSCA: $(VeracodeSCA)
+#        buildConfiguration: 'Release' # ou 'Debug'
+#        appPath: $(appPath)
+  
+    - template: acr-login.yml@template
+      parameters:
+        serviceConnection: $(dockerRegistryServiceConnection)
+
+    - script: |
+        echo "#############################"
+        echo $appVersion
+        appVersion=$(cat $(Build.SourcesDirectory)/$(appPath)/version.txt)
+        echo "##vso[task.setvariable variable=appVersion]$appVersion"
+        echo $appVersion
+      displayName: 'Get app version'
+ 
+    - template: docker-build-push.yml@template
+      parameters:
+        serviceConnection: $(dockerRegistryServiceConnection)
+        repository: $(imageRepository)
+        dockerfile: $(dockerfilePath)
+        tags: '$(Build.BuildId)'
+ 
+    - template: endtime.yml@template 
+      parameters:
+        startTimestamp: $(startTimestamp)
+
+    - template: notify.yml@template
+      parameters:
+        BuildDefinitionName: '$(Build.DefinitionName)'
+        startTime: '$(startTime)'
+        endTime: '$(endTime)'
+        executionTime: '$(executionTime)'
+        SourceVersion: '$(Build.SourceVersion)'
+        RequestedFor: '$(Build.RequestedFor)'
+        WEBHOOK_URL: '$(WEBHOOK_URL)'
+
+variables:
+- group: VAR_Veracode
+- group: VAR_Build_Default
+- group: VAR_Build_Projeto
+
+resources:
+  repositories:
+  - repository: template
+    type: git
+    name: "Barramento-Microservicos/Unidas-TemplatesAggrandize-Net"
+    ref: refs/heads/main
+
+stages:
+- stage: CI
+  displayName: 'Build Process'
+  jobs:
+  - job: BuildTestPush
+    pool:
+      vmImage: 'ubuntu-20.04'
+    steps:
+    - template: starttime.yml@template 
+
+    - template: build-netcore.yml@template
+      parameters:
+        buildConfiguration: 'Release'
+        appPath: $(appPath)
+
+    - template: unity-test.yml@template
+      parameters:
+        testProjectsPath: $(testProjectsPath)
+        buildConfiguration: 'Debug'
+
+    - template: sonarqube-analysis.yml@template
+      parameters:
+        sonarServiceConnection: $(sonarServiceConnection)
+        projectKey: $(projectKey)
+        projectName: $(projectName)
+  
+    - template: veracode.yml@template
+      parameters:
+        nuGetServiceConnections: $(nuGetServiceConnections)
+        caminhoPacote: $(caminhoPacote)
+        VeracodeID: $(VeracodeID)
+        VeracodeKey: $(VeracodeKey)
+        veracodeAppProfile: $(veracodeAppProfile)
+        VeracodeSCA: $(VeracodeSCA)
+#        buildConfiguration: 'Release' # ou 'Debug'
+#        appPath: $(appPath)
+  
+    - template: acr-login.yml@template
+      parameters:
+        serviceConnection: $(dockerRegistryServiceConnection)
+
+    - script: |
+        echo "#############################"
+        echo $appVersion
+        appVersion=$(cat $(Build.SourcesDirectory)/$(appPath)/version.txt)
+        echo "##vso[task.setvariable variable=appVersion]$appVersion"
+        echo $appVersion
+      displayName: 'Get app version'
+ 
+    - template: docker-build-push.yml@template
+      parameters:
+        serviceConnection: $(dockerRegistryServiceConnection)
+        repository: $(imageRepository)
+        dockerfile: $(dockerfilePath)
+        tags: '$(Build.BuildId)'
+ 
+    - template: endtime.yml@template 
+      parameters:
+        startTimestamp: $(startTimestamp)
+
+    - template: notify.yml@template
+      parameters:
+        BuildDefinitionName: '$(Build.DefinitionName)'
+        startTime: '$(startTime)'
+        endTime: '$(endTime)'
+        executionTime: '$(executionTime)'
+        SourceVersion: '$(Build.SourceVersion)'
+        RequestedFor: '$(Build.RequestedFor)'
+        WEBHOOK_URL: '$(WEBHOOK_URL)'

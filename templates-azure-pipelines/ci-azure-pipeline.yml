@@ -1,0 +1,80 @@
+trigger:
+- main
+
+pr:
+- main
+
+variables:
+   dockerRegistryServiceConnection: 'ACR-DEV-HML'
+   imageRepository: 'calculatorwebapp'
+   dockerfilePath: '**/Dockerfile'
+   tag: '$(appVersion),$(Build.BuildId)'  # Nota: Isso é redundante agora, mas o mantive para fins de clareza.
+   appPath: 'CalculatorApp/CalculatorWebApp'
+   WEBHOOK_URL: 'https://unidasti.webhook.office.com/webhookb2/190742f5-254a-4d10-a981-3ee93d06fe6b@701e51de-6b7f-4401-8ae0-57c9588cdd68/IncomingWebhook/551ea71d74d44d30b764d0a6435477c3/c5873ff6-1b81-4cfd-a0dc-df3be5d9baaa'
+
+resources:
+  repositories:
+  - repository: template
+    type: git
+    name: "Barramento-Microservicos/Unidas-TemplatesAggrandize-Net"
+    ref: refs/heads/main
+
+stages:
+- stage: CI
+  displayName: 'Build Process'
+  jobs:
+  - job: BuildTestPush
+    pool:
+      vmImage: 'ubuntu-20.04'
+    steps:
+    - template: starttime.yml@template 
+
+    - template: build-netcore.yml@template
+      parameters:
+        buildConfiguration: 'Release'
+        appPath: $(appPath)
+
+    - template: unity-test.yml@template
+      parameters:
+        testProjectsPath: $(testProjectsPath)
+        buildConfiguration: 'Debug'
+
+    - template: sonarqube-analysis.yml@template
+      parameters:
+        sonarServiceConnection: $(sonarServiceConnection)
+        projectKey: $(projectKey)
+        projectName: $(projectName)
+    
+
+    - template: acr-login.yml@template
+      parameters:
+        serviceConnection: $(dockerRegistryServiceConnection)
+
+    - script: |
+        echo "#############################"
+        echo $appVersion
+        appVersion=$(cat $(Build.SourcesDirectory)/$(appPath)/version.txt)
+        echo "##vso[task.setvariable variable=appVersion]$appVersion"
+        echo $appVersion
+      displayName: 'Get app version'
+ 
+    - template: docker-build-push.yml@template
+      parameters:
+        serviceConnection: $(dockerRegistryServiceConnection)
+        repository: $(imageRepository)
+        dockerfile: $(dockerfilePath)
+        tags: '$(Build.BuildId)'
+ 
+    - template: endtime.yml@template # Referência ao template
+      parameters:
+        startTimestamp: $(startTimestamp)
+
+    - template: notify.yml@template
+      parameters:
+        BuildDefinitionName: '$(Build.DefinitionName)'
+        startTime: '$(startTime)' # Essas variáveis devem ser definidas em algum lugar do seu pipeline principal
+        endTime: '$(endTime)'
+        executionTime: '$(executionTime)'
+        SourceVersion: '$(Build.SourceVersion)'
+        RequestedFor: '$(Build.RequestedFor)'
+        WEBHOOK_URL: '$(WEBHOOK_URL)'

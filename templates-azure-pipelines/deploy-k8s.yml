@@ -1,0 +1,46 @@
+parameters:
+  environment: ''
+  serviceConnection: ''
+
+steps:
+- script: |
+    echo '###################################'
+    cat k8s/template-deploy-k8s.yml
+    echo '###################################'
+- task: Kubernetes@1
+  displayName: 'Deploy to Kubernetes in ${{ parameters.environment }}'
+  inputs:
+    connectionType: 'Kubernetes Service Connection'
+    kubernetesServiceEndpoint: ${{ parameters.serviceConnection }}
+    command: 'apply'
+    arguments: '-f k8s/template-deploy-k8s.yml'
+
+# Verifique o status do rollout do deployment
+- task: Kubernetes@1
+  displayName: 'Check Deployment Rollout Status'
+  inputs:
+    connectionType: 'Kubernetes Service Connection'
+    kubernetesServiceEndpoint: ${{ parameters.serviceConnection }}
+    command: 'rollout'
+    arguments: 'status deploy/$(APPNAME) --timeout=1m'
+  continueOnError: true # Isso permite que a pipeline continue mesmo se essa tarefa falhar
+
+# Recuperar os logs do pod (opcional)
+- task: Kubernetes@1
+  displayName: 'Get Pod Logs'
+  inputs:
+    connectionType: 'Kubernetes Service Connection'
+    kubernetesServiceEndpoint: ${{ parameters.serviceConnection }}
+    command: 'logs'
+    arguments: 'deploy/$(APPNAME)'
+  condition: failed() # Isso irá executar apenas se o passo anterior falhar
+
+# Reverter o deployment se o rollout falhar
+- task: Kubernetes@1
+  displayName: 'Undo Deployment'
+  inputs:
+    connectionType: 'Kubernetes Service Connection'
+    kubernetesServiceEndpoint: ${{ parameters.serviceConnection }}
+    command: 'rollout'
+    arguments: 'undo deploy/$(APPNAME)'
+  condition: failed() # Isso irá executar apenas se o "Check Deployment Rollout Status" falhar

@@ -1,0 +1,45 @@
+pool:
+  name: Unidas Pipelines (Linux)
+steps:
+- task: qetza.replacetokens.replacetokens-task.replacetokens@5
+  displayName: 'Replace tokens in environment.ts'
+  inputs:
+    rootDirectory: '$(System.DefaultWorkingDirectory)/src/environments/'
+    targetFiles: environment.ts
+    tokenPattern: azpipelines
+
+- task: qetza.replacetokens.replacetokens-task.replacetokens@5
+  displayName: 'Replace BuildID'
+  inputs:
+    rootDirectory: '$(System.DefaultWorkingDirectory)/src/app/welcome/'
+    targetFiles: welcome.component.html
+    tokenPattern: azpipelines
+
+- task: NodeTool@0
+  displayName: 'Use Node 18.x'
+  inputs:
+    versionSpec: 18.x
+
+- task: Npm@1
+  displayName: 'Install CLI'
+  inputs:
+    command: custom
+    verbose: false
+    customCommand: ' install -g @angular/cli'
+
+- task: Npm@1
+  displayName: 'npm install'
+  inputs:
+    verbose: false
+
+- task: Npm@1
+  displayName: 'ng Build'
+  inputs:
+    command: custom
+    verbose: false
+    customCommand: 'run build'
+
+- task: PublishBuildArtifacts@1
+  displayName: 'Publish Artifact: drop'
+  inputs:
+    PathtoPublish: dist

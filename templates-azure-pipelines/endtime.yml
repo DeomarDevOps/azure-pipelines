@@ -1,0 +1,16 @@
+# endtime.yaml
+
+parameters:
+  - name: startTimestamp
+    type: string
+
+steps:
+  - script: |
+      endTime=$(date)
+      endTimestamp=$(date +%s)
+      duration=$(expr $endTimestamp - ${{ parameters.startTimestamp }})
+      minutes=$(expr $duration / 60)
+      seconds=$(expr $duration % 60)
+      echo "##vso[task.setvariable variable=executionTime]${minutes}m${seconds}s"
+      echo "##vso[task.setvariable variable=endTime]$endTime"
+    displayName: 'Register end time, date and calculate duration'
