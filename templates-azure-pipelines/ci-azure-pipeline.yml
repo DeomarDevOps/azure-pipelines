@@ -10,7 +10,7 @@ variables:
    dockerfilePath: '**/Dockerfile'
    tag: '$(appVersion),$(Build.BuildId)'  # Nota: Isso é redundante agora, mas o mantive para fins de clareza.
    appPath: 'CalculatorApp/CalculatorWebApp'
-   WEBHOOK_URL: 'https://unidasti.webhook.office.com/webhookb2/190742f5-254a-4d10-a981-3ee93d06fe6b@701e51de-6b7f-4401-8ae0-57c9588cdd68/IncomingWebhook/551ea71d74d44d30b764d0a6435477c3/c5873ff6-1b81-4cfd-a0dc-df3be5d9baaa'
+   WEBHOOK_URL: '###########################################################'
 
 resources:
   repositories:
